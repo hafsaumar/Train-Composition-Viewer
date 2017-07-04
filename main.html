@@ -1,0 +1,169 @@
+<html>
+	<head>
+		<title>Test D 01</title>
+	
+	</head>
+
+	<style type = "text/css">
+		h3{
+			color: steelblue;
+		}
+		table{
+			font-size: 20px;
+			padding:10px;
+			padding-bottom: 30px;
+			padding-left: 10px;
+			max-width: 1000px;
+			cellpadding:10;
+			cellpsacing:10;
+			text-space: 1px;
+			width:100%;
+			height:100%;
+			margin:auto;
+		}
+		img{
+			margin-right: 5%;
+			position: relative;
+			max-height: 80px;
+			max-width: 80px;
+		}
+		#speed{
+			max-width: 110px;
+			float: left;
+		}
+		#speedBarBackground{
+			background: lightgray;
+			height: 20px;
+			max-width: 150px;
+			width:calc(80% - 80px);
+			float:left;
+			margin-left : 10px;
+			margin-top: 3px
+		}
+		#speedBar{
+			background: royalblue;
+			height: 20px;
+		}
+		#heading {
+			align-content: center;
+			position: relative;
+			margin: auto;
+		}
+
+	</style>
+
+	<body ng-app="myApp" ng-controller="myCtrl">
+
+	<div id="heading"><img src="HEADER.jpg"  style="margin-left: 60px; max-width:100%; max-height: 30%"/></div>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+		<script>
+            var app = angular.module('myApp', []);
+            app.controller('myCtrl', function($scope, $http, $filter) {
+                $scope.trainInfoArray = [
+                   /* { trainNumber : "S967", to: "HKI", from:"TKU", locomotive: "SM3 Electric", wagonTypes: "CM, IM, TTC, IM1 (99 meters)", speed: "200KM/h", speedPercentage: 200/5 },
+					{ trainNumber : "IC962", to: "TKU", from:"HKI", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, ERd, Ed (126 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+                    { trainNumber : "IC972", to: "TUS", from:"HKI", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, ERd, Ed (126 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+                    { trainNumber : "IC945", to: "HKI", from:"TKU", locomotive: "SR2 Electric", wagonTypes: "Edfs, Edb, Edo (99 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+                    { trainNumber : "IC948", to: "TUS", from:"HKI", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, ERd, Eds, Ed (152 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+                    { trainNumber : "IC951", to: "HKI", from:"TKU", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, ERd, Eds (126 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+                    { trainNumber : "IC954", to: "TKU", from:"HKI", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, Edfs (99 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+                    { trainNumber : "IC955", to: "HKI", from:"TKU", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, Edfs (99 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+					{ trainNumber : "IC958", to: "TKU", from:"HKI", locomotive: "SM3 Electric", wagonTypes: "IM1, CMH, TTC, TT, CM, IM2 (160 meters)", speed: "200KM/h", speedPercentage: 200/5 },
+                    { trainNumber : "IC960", to: "TKU", from:"HKI", locomotive: "SR2 Electric", wagonTypes: "Edo, Edb, ERd, Ed (126 meters)", speed: "160KM/h", speedPercentage: 160/5 },
+*/
+				];
+                var date = new Date();
+                $scope.ddMMyyyy = $filter('date')(new Date(), 'dd/MM/yyyy HH:mm:ss');
+
+                <!--getting Train Numbers-->
+                getTrainNumber("https://rata.digitraffic.fi/api/v1/live-trains?station=HKI");
+
+
+                function getTrainNumber(myURL){
+                    $http.get(myURL)
+                        .then(function(liveTrains){
+                            console.log(liveTrains.data);
+                            for(x in liveTrains.data){
+                                $scope.trainInfoArray.push({ trainNumber: liveTrains.data[x].trainType + liveTrains.data[x].trainNumber });
+                                console.log("Done");
+                                getTrainDetails(liveTrains.data[x].trainNumber);
+                            }
+
+                        })
+
+                }
+                function getTrainDetails(stationNo){
+                    console.log(date.toString("dd-MM-yyyy"));
+                    var url = "https://rata.digitraffic.fi/api/v1/compositions/" + stationNo +"?departure_date=" + date.toISOString().slice(0, 10);
+                    $http.get(url)
+                        .then(function(resp){
+                            console.log(resp.data);
+                            console.log(date);
+                            for(count = 0; count < $scope.trainInfoArray.length; count++){
+                                var trainNo = ( resp.data.trainType + resp.data.trainNumber);
+                               // var trainNo = "IC961";
+                                console.log(trainNo);
+                                if(trainNo == $scope.trainInfoArray[count].trainNumber){
+                                    console.log($scope.trainInfoArray[count].trainNumber)
+                                    $scope.trainInfoArray[count].departureDate = resp.data.departureDate;
+                                    $scope.trainInfoArray[count].beginStationShortCode = resp.data.journeySections[0].beginTimeTableRow.stationShortCode;
+                                    $scope.trainInfoArray[count].endStationShortCode = resp.data.journeySections[0].endTimeTableRow.stationShortCode;
+                                    $scope.trainInfoArray[count].locomotive = resp.data.journeySections[0].locomotives[0].locomotiveType;
+                                    $scope.trainInfoArray[count].powerTypes = resp.data.journeySections[0].locomotives[0].powerType;
+                                    $scope.trainInfoArray[count].wagonTypes = resp.data.journeySections[0].wagons[0].wagonType;
+                                    $scope.trainInfoArray[count].speed = resp.data.journeySections[0].maximumSpeed + "Km/h";
+                                    $scope.trainInfoArray[count].length = resp.data.journeySections[0].totalLength + " meters";
+                                    $scope.trainInfoArray[count].speedPercentage = resp.data.journeySections[0].maximumSpeed/3;
+                                    $scope.trainInfoArray[count].beginTime = new Date(resp.data.journeySections[0].beginTimeTableRow.scheduledTime)  ;
+                                    $scope.trainInfoArray[count].endTime = new Date(resp.data.journeySections[0].endTimeTableRow.scheduledTime) ;
+                                    $scope.trainInfoArray[count].currentlyRunning = (date >= $scope.trainInfoArray[count].beginTime && date <= $scope.trainInfoArray[count].endTime);
+
+                                }
+                            }
+                        })
+                }
+            });
+
+
+
+		</script>
+
+	<!--Table to display the Train Compositions-->
+		<table>
+			<!--Table Heading Row-->
+			<tr align="left">
+				<th colspan="2"><h3>Train Number and Route</h3></th>
+				<th ><h3>Train Information</h3></th>
+			</tr>
+			<tr ng-repeat = "trainInfo in trainInfoArray">
+				<th id="tableHead"><img src="Route.png" /></th>
+
+				<td style='text-align: left;'>
+				<!-- trainType + trainNumber    beginStation - endStation -->
+					<strong>{{trainInfo.trainNumber}}</strong> : <span ng-if="trainInfo.beginStationShortCode"> {{trainInfo.beginStationShortCode}} -> {{trainInfo.endStationShortCode}}</span><br>
+					<span ng-if="trainInfo.currentlyRunning" > Currently Running</span>
+				</td>
+				<td>
+					<!-- Locomotive type and power type -->
+					Locomotive:<strong>{{trainInfo.locomotive || 'Not Available'}}</strong><br>
+					<!-- Departure Date -->
+					Departure Date:<strong> {{trainInfo.departureDate || 'Not Available'}}</strong><br>
+					<!-- Power Type-->
+					Power Types:<strong> {{trainInfo.powerTypes || 'Not Available'}}</strong><br>
+					<!-- Wagon types and theirs total length-->
+					Wagons:<strong> {{trainInfo.wagonTypes || 'Not Available'}} <span ng-if="trainInfo.wagonTypes">({{trainInfo.length}})</span></strong><br>
+				<!-- Train max speed -->
+				<div>
+					<!-- Speed Bar to Visually Display Max Speed of the Train-->
+					<span id="speed" > Max speed: </span>
+					<div id="speedBarBackground" > <div id="speedBar" ng-style = "{ 'width': trainInfo.speedPercentage || 0 + '%' }" ></div></div> <strong>{{trainInfo.speed || 'Not Available'}}</strong>
+				</div>
+
+				</td>
+			</tr>
+		</table>
+	</body>
+	<hr>
+	<small><center>footer - copyright 2001 - Hafsa Umar</center></small>
+</html>
